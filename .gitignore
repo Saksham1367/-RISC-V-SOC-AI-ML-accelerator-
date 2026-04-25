@@ -1,0 +1,43 @@
+# Simulation outputs
+sim/*.vcd
+sim/*.fst
+sim/*.vvp
+sim/*.out
+sim/build/
+sim/results.xml
+sim/dump.vcd
+
+# Cocotb artifacts
+**/sim_build/
+**/__pycache__/
+*.pyc
+*.pyo
+.pytest_cache/
+results.xml
+
+# Yosys / synthesis
+synth/build/
+synth/*.json
+synth/*.blif
+synth/*.dot
+synth/*.svg
+
+# Verilator
+**/obj_dir/
+
+# Editor / OS
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Coverage
+coverage/
+*.cov
+*.dat
