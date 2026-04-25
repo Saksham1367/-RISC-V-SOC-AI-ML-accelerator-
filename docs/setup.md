@@ -1,54 +1,69 @@
-# Toolchain Setup — OSS CAD Suite
+# Toolchain Setup — OSS CAD Suite + cocotb
 
-This project uses the **OSS CAD Suite** from YosysHQ — one bundled distribution that ships every open-source EDA tool we need (Icarus Verilog, Verilator, Yosys, GTKWave, surfer, sby) along with a Python environment pre-wired for cocotb.
+This project's toolchain on Windows:
 
-## 1. Download
+| Tool | Source | Notes |
+|------|--------|-------|
+| Icarus Verilog, Verilator, Yosys, GTKWave | OSS CAD Suite (bundled) | Activate via `environment` |
+| cocotb 2.0+ | System Python 3.13 (`pip install --user cocotb`) | OSS CAD Suite's bundled Python lacks SSL, so we install cocotb against the system Python instead |
+| make | Not used | Tests run via cocotb's Python runner — no GNU Make needed on Windows |
+
+## 1. Download OSS CAD Suite
 
 1. Open https://github.com/YosysHQ/oss-cad-suite-build/releases/latest
-2. Download the file matching your OS:
-   - Windows: **`oss-cad-suite-windows-x64-YYYYMMDD.exe`** (self-extracting archive, ~600 MB compressed, ~2 GB extracted)
+2. Download `oss-cad-suite-windows-x64-YYYYMMDD.exe` (self-extracting 7-zip archive, ~330 MB compressed, ~2 GB extracted).
 
-## 2. Extract
+## 2. Extract to `C:\`
 
-1. Move the downloaded `.exe` to `C:\` (root of C: drive).
-2. Double-click it. When prompted for the destination, choose `C:\` — it will create `C:\oss-cad-suite\`.
-3. Wait for extraction to finish (~2–3 min on SSD).
+Use 7-Zip (or just double-click the `.exe`) to extract to `C:\`. The result must be:
 
-After extraction the path `C:\oss-cad-suite\environment` (a shell file with no extension) must exist.
+```
+C:\oss-cad-suite\
+├── bin\          (iverilog, verilator, yosys, gtkwave, ...)
+├── lib\          (python3.exe, libs)
+├── share\
+├── environment.bat
+├── environment.ps1
+└── environment   ← supplied by this repo (Bash activation)
+```
 
-## 3. Activate from Git Bash
+The `environment` file (no extension) is a small Bash wrapper that this project ships — the upstream archive only ships `.bat`/`.ps1`. After extraction, copy `setup/environment` from this repo to `C:\oss-cad-suite\environment`.
 
-Every time you open a new Git Bash shell to work on this project:
+## 3. Install cocotb against system Python
+
+```bash
+"/c/Users/$USER/AppData/Local/Programs/Python/Python313/python.exe" -m pip install --user cocotb cocotb-bus
+```
+
+This installs `cocotb-config` to `~/AppData/Roaming/Python/Python313/Scripts/`.
+
+## 4. Activate from Git Bash
+
+Every new Git Bash session (or add to `~/.bashrc` to make permanent):
 
 ```bash
 source /c/oss-cad-suite/environment
+export PATH="/c/Users/$USER/AppData/Roaming/Python/Python313/Scripts:$PATH"
 ```
 
-This puts `iverilog`, `vvp`, `verilator`, `yosys`, `gtkwave`, `python` (the cocotb-aware bundled Python), and `make` on your `PATH`.
-
-> **Important:** Do **not** use the system Python 3.13 with cocotb in this project — use the Python that comes inside OSS CAD Suite. After `source`-ing `environment`, `which python` should point inside `/c/oss-cad-suite/`.
-
-## 4. Verify Install
-
-After activation, run:
+## 5. Verify
 
 ```bash
-iverilog -V
-verilator --version
-yosys -V
+iverilog -V      # Icarus Verilog 14.0 (devel)
+yosys -V         # Yosys 0.x
 gtkwave --version
-python -c "import cocotb; print('cocotb', cocotb.__version__)"
-make --version
+cocotb-config --version    # 2.0.x
 ```
 
-Each command should print a version string. If any fail, the install is incomplete — re-extract before continuing.
-
-## 5. Optional — Persistent Activation
-
-If you'd like `oss-cad-suite` to activate automatically in every Git Bash session, add this line to `~/.bashrc`:
+## 6. Run Phase 1 regression
 
 ```bash
-source /c/oss-cad-suite/environment
+cd /c/Users/saksh/Desktop/riscv-soc-ai-ml-accelerator
+python scripts/run_tests.py all
 ```
 
-Skip this if you'd rather activate per-session.
+Expected: 4 suites, 22 tests, all PASS.
+
+> **Why no Make?** GNU Make is not bundled on Windows. cocotb 2.0 provides a native Python runner (`cocotb_tools.runner`) that drives the simulator directly. `scripts/run_tests.py` uses it — no Make required.
+
+> **Why not OSS CAD Suite's bundled Python?** That Python is built without `ssl`, so `pip install` cannot reach PyPI. The system Python 3.13 works fine for cocotb 2.0.

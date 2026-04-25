@@ -64,7 +64,7 @@ async def run(dut, cycles: int):
 # ---------------------------------------------------------------------------
 @cocotb.test()
 async def arithmetic_smoke(dut):
-    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
 
     # Program:
     #   addi x1, x0, 5    # x1 = 5
@@ -90,7 +90,7 @@ async def arithmetic_smoke(dut):
 @cocotb.test()
 async def forwarding_chain(dut):
     """Back-to-back dependent ALU ops require EX->ID forwarding."""
-    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
 
     # x1 = 1; x2 = x1+1; x3 = x2+1; x4 = x3+1
     prog = [
@@ -112,7 +112,7 @@ async def forwarding_chain(dut):
 @cocotb.test()
 async def branch_taken(dut):
     """BEQ taken should skip the next instruction."""
-    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
 
     # 0x00: addi x1, x0, 3
     # 0x04: addi x2, x0, 3
@@ -139,7 +139,7 @@ async def branch_taken(dut):
 @cocotb.test()
 async def branch_not_taken(dut):
     """BNE not taken — both instructions execute."""
-    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
 
     # x1=5; x2=5; bne x1,x2,+8 (NOT taken); x3=10; x4=20
     prog = [
@@ -160,7 +160,7 @@ async def branch_not_taken(dut):
 @cocotb.test()
 async def jal_link(dut):
     """JAL must write PC+4 to rd and jump."""
-    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
 
     # 0x00: addi x1, x0, 1
     # 0x04: jal  x5, +8           ; rd=x5 = 0x08, target = 0x0C
@@ -185,7 +185,7 @@ async def jal_link(dut):
 @cocotb.test()
 async def load_store_word(dut):
     """SW then LW — basic data path through DMEM."""
-    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
 
     # x1 = 0x10000000  (data SRAM base — but our TB ignores high bits, sram is 4K words)
     # We'll use a small dmem index instead. Use addr 0 of dmem.
@@ -211,7 +211,7 @@ async def load_store_word(dut):
 @cocotb.test()
 async def load_use_stall(dut):
     """LW followed immediately by an op consuming the loaded value must stall 1 cycle."""
-    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
 
     # Pre-load DMEM[0] = 0x11
     # lw  x1, 0(x0)
@@ -234,7 +234,7 @@ async def load_use_stall(dut):
 @cocotb.test()
 async def x0_stays_zero(dut):
     """Writing to x0 should be a no-op."""
-    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
 
     prog = [
         isa.addi(0, 0, 0x123),    # try to set x0 = 0x123

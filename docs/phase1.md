@@ -59,17 +59,30 @@ verif/cocotb/core/
 
 Each subdir has its own Makefile and is invoked via cocotb's standard flow.
 
-## How to run (after OSS CAD Suite is installed)
+## How to run (after toolchain setup)
 
 ```bash
 source /c/oss-cad-suite/environment
+export PATH="/c/Users/$USER/AppData/Roaming/Python/Python313/Scripts:$PATH"
 
-# Single block
-cd verif/cocotb/core/alu && make
+# All Phase 1 suites
+python scripts/run_tests.py all
 
-# All Phase 1 blocks
-cd verif/cocotb && make all
+# A single suite
+python scripts/run_tests.py alu
+python scripts/run_tests.py riscv_core
 ```
 
-Waveforms are produced as `sim_build/<topmodule>.fst` (FST) inside each test
-directory and can be opened with `gtkwave sim_build/...`.
+Build artifacts (waveforms, .vvp) land under `sim/<suite>/` and can be opened
+with `gtkwave sim/<suite>/dump.fst`.
+
+## Phase 1 results — current
+
+```
+ALU                 3/3   PASS  (directed + 500-iter random + shift-mask)
+Regfile             5/5   PASS  (x0, write/read, bypass, two-port, 500-iter storm)
+Immediate generator 6/6   PASS  (I/S/B/U/J + 200-iter random)
+RISC-V core         8/8   PASS  (arith, forwarding, branches taken/not, JAL,
+                                 load/store, load-use stall, x0 stays zero)
+Total: 22/22 PASS
+```

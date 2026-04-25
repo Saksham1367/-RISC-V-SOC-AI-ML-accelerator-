@@ -18,7 +18,7 @@ from common.golden import to_signed, MASK32
 
 async def drive(dut, instr: int) -> int:
     dut.instr.value = instr
-    await Timer(1, units="ns")
+    await Timer(1, unit="ns")
     return int(dut.imm.value)
 
 

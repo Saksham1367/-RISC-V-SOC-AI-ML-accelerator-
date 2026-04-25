@@ -35,7 +35,7 @@ async def apply(dut, op_name: str, a: int, b: int):
     dut.a.value  = a & MASK32
     dut.b.value  = b & MASK32
     dut.op.value = OP_CODES[op_name]
-    await Timer(1, units="ns")
+    await Timer(1, unit="ns")
 
 
 def check(dut, op_name: str, a: int, b: int):

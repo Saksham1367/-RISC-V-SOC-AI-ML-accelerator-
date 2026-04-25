@@ -151,7 +151,10 @@ module decoder
           F3_OR:      ctrl.alu_op = ALU_OR;        // ORI
           F3_AND:     ctrl.alu_op = ALU_AND;       // ANDI
           F3_SLL:     ctrl.alu_op = ALU_SLL;       // SLLI
-          F3_SRL_SRA: ctrl.alu_op = funct7[5] ? ALU_SRA : ALU_SRL; // SRAI/SRLI
+          F3_SRL_SRA: begin
+            if (funct7[5]) ctrl.alu_op = ALU_SRA;  // SRAI
+            else           ctrl.alu_op = ALU_SRL;  // SRLI
+          end
           default:    ctrl.illegal = 1'b1;
         endcase
       end
@@ -163,12 +166,18 @@ module decoder
         ctrl.reg_we    = 1'b1;
         ctrl.src_b_sel = SRC_B_REG;
         unique case (funct3)
-          F3_ADD_SUB: ctrl.alu_op = funct7[5] ? ALU_SUB : ALU_ADD;
+          F3_ADD_SUB: begin
+            if (funct7[5]) ctrl.alu_op = ALU_SUB;
+            else           ctrl.alu_op = ALU_ADD;
+          end
           F3_SLL:     ctrl.alu_op = ALU_SLL;
           F3_SLT:     ctrl.alu_op = ALU_SLT;
           F3_SLTU:    ctrl.alu_op = ALU_SLTU;
           F3_XOR:     ctrl.alu_op = ALU_XOR;
-          F3_SRL_SRA: ctrl.alu_op = funct7[5] ? ALU_SRA : ALU_SRL;
+          F3_SRL_SRA: begin
+            if (funct7[5]) ctrl.alu_op = ALU_SRA;
+            else           ctrl.alu_op = ALU_SRL;
+          end
           F3_OR:      ctrl.alu_op = ALU_OR;
           F3_AND:     ctrl.alu_op = ALU_AND;
           default:    ctrl.illegal = 1'b1;

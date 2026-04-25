@@ -49,19 +49,19 @@ def read(dut, port: str, addr: int) -> int:
 
 @cocotb.test()
 async def x0_is_zero(dut):
-    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
     await reset(dut)
 
     # write garbage to x0 — must not stick
     await write(dut, 0, 0xDEADBEEF)
     dut.rs1_addr.value = 0
-    await Timer(1, units="ns")
+    await Timer(1, unit="ns")
     assert int(dut.rs1_data.value) == 0, "x0 read non-zero after write"
 
 
 @cocotb.test()
 async def write_then_read(dut):
-    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
     await reset(dut)
 
     for addr in [1, 5, 17, 31]:
@@ -70,7 +70,7 @@ async def write_then_read(dut):
         # one clock later, read
         await RisingEdge(dut.clk)
         dut.rs1_addr.value = addr
-        await Timer(1, units="ns")
+        await Timer(1, unit="ns")
         got = int(dut.rs1_data.value)
         assert got == val, f"x{addr}: expected 0x{val:08x} got 0x{got:08x}"
 
@@ -78,14 +78,14 @@ async def write_then_read(dut):
 @cocotb.test()
 async def write_before_read_bypass(dut):
     """Same cycle: write x7=val and read rs1_addr=7 → see new val (bypass)."""
-    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
     await reset(dut)
 
     dut.we.value       = 1
     dut.rd_addr.value  = 7
     dut.rd_data.value  = 0xCAFEBABE
     dut.rs1_addr.value = 7
-    await Timer(1, units="ns")
+    await Timer(1, unit="ns")
     got = int(dut.rs1_data.value)
     assert got == 0xCAFEBABE, f"bypass failed: got 0x{got:08x}"
 
@@ -95,7 +95,7 @@ async def write_before_read_bypass(dut):
 
 @cocotb.test()
 async def two_ports_independent(dut):
-    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
     await reset(dut)
 
     # populate x1..x10 with i*0x100
@@ -108,7 +108,7 @@ async def two_ports_independent(dut):
     for a, b in [(1, 2), (3, 7), (10, 5), (4, 9)]:
         dut.rs1_addr.value = a
         dut.rs2_addr.value = b
-        await Timer(1, units="ns")
+        await Timer(1, unit="ns")
         v1 = int(dut.rs1_data.value)
         v2 = int(dut.rs2_data.value)
         assert v1 == a * 0x100, f"rs1 read x{a}: got 0x{v1:08x}"
@@ -117,7 +117,7 @@ async def two_ports_independent(dut):
 
 @cocotb.test()
 async def random_storm(dut):
-    cocotb.start_soon(Clock(dut.clk, 10, units="ns").start())
+    cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
     await reset(dut)
 
     random.seed(0xBEEF)
@@ -137,6 +137,6 @@ async def random_storm(dut):
         # check a random port read
         a = random.randint(0, 31)
         dut.rs1_addr.value = a
-        await Timer(1, units="ns")
+        await Timer(1, unit="ns")
         got = int(dut.rs1_data.value)
         assert got == shadow[a], f"x{a}: expected 0x{shadow[a]:08x} got 0x{got:08x}"

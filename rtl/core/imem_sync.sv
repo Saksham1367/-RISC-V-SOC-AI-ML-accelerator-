@@ -8,8 +8,7 @@
 `default_nettype none
 
 module imem_sync #(
-  parameter int unsigned DEPTH_WORDS = 4096,
-  parameter string       INIT_FILE   = ""
+  parameter int unsigned DEPTH_WORDS = 4096
 )(
   input  logic         clk,
   input  logic [31:0]  addr,
@@ -19,9 +18,11 @@ module imem_sync #(
 
   logic [31:0] sram_rdata;
 
+  // Note: INIT_FILE is loaded directly into u_sram.mem from the testbench
+  // via $readmemh on a hierarchical reference, so this wrapper does not
+  // forward a string parameter (avoids an Icarus elaboration limitation).
   sram #(
-    .DEPTH_WORDS (DEPTH_WORDS),
-    .INIT_FILE   (INIT_FILE)
+    .DEPTH_WORDS (DEPTH_WORDS)
   ) u_sram (
     .clk    (clk),
     .addr   (addr),
