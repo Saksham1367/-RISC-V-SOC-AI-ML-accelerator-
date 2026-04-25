@@ -8,11 +8,13 @@ Project under active development. Phase progress tracked below.
 
 | Phase | Scope | Status |
 |-------|-------|--------|
-| 1 | RISC-V RV32I 3-stage core | In progress |
-| 2 | 4×4 Systolic Array Accelerator | Pending |
+| 1 | RISC-V RV32I 3-stage core | ✅ green (22/22) |
+| 2 | 4×4 Systolic Array Accelerator | ✅ green (11/11) |
 | 3 | AXI4 / AXI4-Lite Bus Integration | Pending |
 | 4 | cocotb Verification Environment | Pending |
 | 5 | Regression + Yosys Synthesis + Docs | Pending |
+
+**Total Phase 1+2 regression: 33/33 PASS**
 
 ## Architecture
 

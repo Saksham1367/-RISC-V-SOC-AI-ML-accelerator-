@@ -20,6 +20,7 @@ from pathlib import Path
 REPO = Path(__file__).resolve().parent.parent
 RTL_CORE = REPO / "rtl" / "core"
 RTL_MEM = REPO / "rtl" / "memory"
+RTL_ACC = REPO / "rtl" / "accelerator"
 COCOTB = REPO / "verif" / "cocotb"
 
 # Make common helpers importable from any test module
@@ -115,11 +116,40 @@ def run_riscv_core() -> int:
     )
 
 
+def run_pe() -> int:
+    return _runner(
+        name="PE",
+        sources=[RTL_ACC / "sa_pkg.sv", RTL_ACC / "pe.sv"],
+        top="pe",
+        test_module="test_pe",
+        test_dir=COCOTB / "accelerator" / "pe",
+        build_dir=REPO / "sim" / "pe",
+    )
+
+
+def run_sa_buffer() -> int:
+    return _runner(
+        name="Systolic array buffer (matrix multiply)",
+        sources=[
+            RTL_ACC / "sa_pkg.sv",
+            RTL_ACC / "pe.sv",
+            RTL_ACC / "sa_top.sv",
+            RTL_ACC / "sa_buffer.sv",
+        ],
+        top="sa_buffer",
+        test_module="test_sa_buffer",
+        test_dir=COCOTB / "accelerator" / "sa_buffer",
+        build_dir=REPO / "sim" / "sa_buffer",
+    )
+
+
 SUITES = {
     "alu":        run_alu,
     "regfile":    run_regfile,
     "imm_gen":    run_imm_gen,
     "riscv_core": run_riscv_core,
+    "pe":         run_pe,
+    "sa_buffer":  run_sa_buffer,
 }
 
 
