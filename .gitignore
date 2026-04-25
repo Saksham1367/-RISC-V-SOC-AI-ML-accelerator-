@@ -1,11 +1,13 @@
-# Simulation outputs
-sim/*.vcd
-sim/*.fst
-sim/*.vvp
-sim/*.out
-sim/build/
-sim/results.xml
-sim/dump.vcd
+# Simulation outputs (cocotb runner build dirs land under sim/<suite>/)
+sim/**/*.vcd
+sim/**/*.fst
+sim/**/*.vvp
+sim/**/*.out
+sim/**/cmds.f
+sim/**/results.xml
+sim/**/dump.vcd
+sim/**/sim_build/
+sim/**/__pycache__/
 
 # Cocotb artifacts
 **/sim_build/
