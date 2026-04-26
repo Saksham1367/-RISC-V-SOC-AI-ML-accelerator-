@@ -17,6 +17,7 @@ from cocotb.clock import Clock
 from cocotb.triggers import RisingEdge, Timer
 
 from common.axil import AxiLiteMaster
+from common.axil_monitor import AxiLiteMonitor
 
 
 NUM_REGS = 8
@@ -86,6 +87,11 @@ async def read_only_register(dut):
 async def random_storm(dut):
     cocotb.start_soon(Clock(dut.clk, 10, unit="ns").start())
     await reset(dut)
+
+    # Spawn protocol monitor alongside the master
+    mon = AxiLiteMonitor(dut)
+    cocotb.start_soon(mon.run())
+
     m = AxiLiteMaster(dut)
     random.seed(0xAB1)
 
@@ -100,3 +106,6 @@ async def random_storm(dut):
             r = random.randint(0, NUM_REGS - 1)
             v = await m.read(r * 4)
             assert v == shadow[r], f"reg {r}: got 0x{v:08x} want 0x{shadow[r]:08x}"
+
+    # Final protocol check
+    mon.assert_clean()

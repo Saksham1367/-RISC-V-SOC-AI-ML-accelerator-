@@ -136,6 +136,65 @@ def run_accelerator_top() -> int:
     )
 
 
+def run_soc_random() -> int:
+    return _runner(
+        name="SoC random+coverage (constrained-random matmul stream)",
+        sources=[
+            REPO / "rtl" / "core" / "riscv_pkg.sv",
+            REPO / "rtl" / "core" / "alu.sv",
+            REPO / "rtl" / "core" / "regfile.sv",
+            REPO / "rtl" / "core" / "imm_gen.sv",
+            REPO / "rtl" / "core" / "decoder.sv",
+            REPO / "rtl" / "core" / "branch_unit.sv",
+            REPO / "rtl" / "core" / "fetch.sv",
+            REPO / "rtl" / "core" / "hazard_unit.sv",
+            REPO / "rtl" / "core" / "execute.sv",
+            REPO / "rtl" / "core" / "load_align.sv",
+            REPO / "rtl" / "core" / "riscv_core.sv",
+            REPO / "rtl" / "memory" / "sram.sv",
+            REPO / "rtl" / "core" / "imem_sync.sv",
+            REPO / "rtl" / "accelerator" / "sa_pkg.sv",
+            REPO / "rtl" / "accelerator" / "pe.sv",
+            REPO / "rtl" / "accelerator" / "sa_top.sv",
+            REPO / "rtl" / "accelerator" / "sa_buffer.sv",
+            REPO / "rtl" / "axi" / "axi4_lite_slave.sv",
+            REPO / "rtl" / "accelerator" / "accelerator_top.sv",
+            REPO / "rtl" / "axi" / "mem_to_axil.sv",
+            REPO / "rtl" / "soc_top.sv",
+        ],
+        top="soc_top",
+        test_module="test_soc_random",
+        test_dir=COCOTB / "soc",
+        build_dir=REPO / "sim" / "soc_random",
+    )
+
+
+def run_core_random() -> int:
+    return _runner(
+        name="RV32I core random instruction stream + coverage",
+        sources=[
+            REPO / "rtl" / "core" / "riscv_pkg.sv",
+            REPO / "rtl" / "core" / "alu.sv",
+            REPO / "rtl" / "core" / "regfile.sv",
+            REPO / "rtl" / "core" / "imm_gen.sv",
+            REPO / "rtl" / "core" / "decoder.sv",
+            REPO / "rtl" / "core" / "branch_unit.sv",
+            REPO / "rtl" / "core" / "fetch.sv",
+            REPO / "rtl" / "core" / "hazard_unit.sv",
+            REPO / "rtl" / "core" / "execute.sv",
+            REPO / "rtl" / "core" / "load_align.sv",
+            REPO / "rtl" / "core" / "riscv_core.sv",
+            REPO / "rtl" / "memory" / "sram.sv",
+            REPO / "rtl" / "core" / "imem_sync.sv",
+            REPO / "rtl" / "core" / "soc_core_tb_top.sv",
+        ],
+        top="soc_core_tb_top",
+        test_module="test_riscv_core_random",
+        test_dir=COCOTB / "core" / "riscv_core",
+        build_dir=REPO / "sim" / "core_random",
+    )
+
+
 def run_soc() -> int:
     return _runner(
         name="SoC top — RV32I program drives accelerator end-to-end",
@@ -171,7 +230,7 @@ def run_soc() -> int:
 
 def run_axil() -> int:
     return _runner(
-        name="AXI4-Lite slave",
+        name="AXI4-Lite slave (with cocotb protocol monitor)",
         sources=[REPO / "rtl" / "axi" / "axi4_lite_slave.sv"],
         top="axi4_lite_slave",
         test_module="test_axil",
@@ -218,6 +277,8 @@ SUITES = {
     "axil":       run_axil,
     "accel_top":  run_accelerator_top,
     "soc":        run_soc,
+    "soc_random": run_soc_random,
+    "core_random": run_core_random,
 }
 
 
