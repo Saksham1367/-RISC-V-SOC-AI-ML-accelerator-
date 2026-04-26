@@ -3,6 +3,7 @@ sim/**/*.vcd
 sim/**/*.fst
 sim/**/*.vvp
 sim/**/*.out
+sim/**/*.v
 sim/**/cmds.f
 sim/**/results.xml
 sim/**/dump.vcd
