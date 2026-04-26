@@ -1,9 +1,11 @@
+// =============================================================================
 // decoder.sv — RV32I instruction decoder
+// Pure combinational. Produces a ctrl_t bundle that the EX stage consumes.
+// =============================================================================
 `default_nettype none
 
-module decoder
-  import riscv_pkg::*;
-(
+import riscv_pkg::*;
+module decoder(
   input  logic [31:0] instr,
   output ctrl_t       ctrl
 );

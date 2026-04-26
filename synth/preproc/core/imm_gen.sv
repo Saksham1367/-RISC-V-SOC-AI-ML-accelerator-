@@ -1,9 +1,11 @@
+// =============================================================================
 // imm_gen.sv — RV32I immediate generator (combinational)
+// Decodes the immediate value from the instruction word according to type.
+// =============================================================================
 `default_nettype none
 
-module imm_gen
-  import riscv_pkg::*;
-(
+import riscv_pkg::*;
+module imm_gen(
   input  logic [31:0] instr,
   output logic [31:0] imm
 );

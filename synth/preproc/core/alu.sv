@@ -1,9 +1,11 @@
+// =============================================================================
 // alu.sv — RV32I ALU
+// Combinational. Width is parameterised but RV32I uses 32 bits.
+// =============================================================================
 `default_nettype none
 
-module alu
-  import riscv_pkg::*;
-#(
+import riscv_pkg::*;
+module alu#(
   parameter int unsigned XLEN = 32
 )(
   input  logic [XLEN-1:0] a,

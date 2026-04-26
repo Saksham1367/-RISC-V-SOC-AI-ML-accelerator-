@@ -33,17 +33,14 @@ module sram #(
   logic [ADDR_W-1:0] word_idx;
   assign word_idx = addr[ADDR_W+1:2];
 
-  // Optional $readmemh image — gated on a non-empty INIT_FILE parameter.
-  // The cocotb test harness loads memory contents via hierarchical writes
-  // before reset, so a sim-time zero-fill loop is not necessary; this also
-  // keeps the module fully synthesis-friendly.
-`ifndef SYNTHESIS
   initial begin
+    for (int i = 0; i < DEPTH_WORDS; i++) begin
+      mem[i] = 32'h0;
+    end
     if (INIT_FILE != "") begin
       $readmemh(INIT_FILE, mem);
     end
   end
-`endif
 
   // Synchronous byte-strobed write
   always_ff @(posedge clk) begin

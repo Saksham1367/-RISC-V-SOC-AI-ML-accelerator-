@@ -30,7 +30,10 @@ sys.path.insert(0, str(COCOTB))
 def _runner(name: str, sources: list[Path], top: str, test_module: str,
             test_dir: Path, build_dir: Path,
             parameters: dict | None = None) -> int:
+    import os
     from cocotb_tools.runner import get_runner
+
+    waves_on = os.environ.get("WAVES", "0") == "1"
 
     print(f"\n========== Suite: {name} ==========")
     runner = get_runner("icarus")
@@ -40,7 +43,7 @@ def _runner(name: str, sources: list[Path], top: str, test_module: str,
         build_args=["-g2012"],
         parameters=parameters or {},
         timescale=("1ns", "1ps"),
-        waves=False,
+        waves=waves_on,
         always=True,
         build_dir=str(build_dir),
     )
@@ -50,6 +53,7 @@ def _runner(name: str, sources: list[Path], top: str, test_module: str,
         build_dir=str(build_dir),
         test_dir=str(test_dir),
         timescale=("1ns", "1ps"),
+        waves=waves_on,
     )
     # results is a Path to the cocotb results.xml; non-zero failure raises CalledProcessError
     return 0

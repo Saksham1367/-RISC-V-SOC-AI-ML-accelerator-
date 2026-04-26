@@ -1,9 +1,11 @@
+// =============================================================================
 // branch_unit.sv — Evaluates branch condition for RV32I.
+// Combinational. Used in the EX stage.
+// =============================================================================
 `default_nettype none
 
-module branch_unit
-  import riscv_pkg::*;
-(
+import riscv_pkg::*;
+module branch_unit(
   input  br_type_e   br_type,
   input  logic [31:0] a,
   input  logic [31:0] b,

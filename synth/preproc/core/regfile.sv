@@ -1,4 +1,12 @@
+// =============================================================================
 // regfile.sv — 32x32 RV32I register file
+//   - 2 asynchronous read ports
+//   - 1 synchronous write port
+//   - x0 hardwired to zero (writes ignored)
+//   - Internal forwarding: when reading and writing the same reg in same
+//     cycle, the read returns the new value (write-before-read).
+//     Helps the 3-stage pipeline avoid one extra forwarding path.
+// =============================================================================
 `default_nettype none
 
 module regfile #(

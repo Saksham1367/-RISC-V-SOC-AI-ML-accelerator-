@@ -1,0 +1,41 @@
+# Yosys synthesis script — full SoC top
+# yosys -m slang -s synth/synth_soc.ys
+
+read_slang --top soc_top \
+    rtl/core/riscv_pkg.sv \
+    rtl/core/alu.sv \
+    rtl/core/regfile.sv \
+    rtl/core/imm_gen.sv \
+    rtl/core/decoder.sv \
+    rtl/core/branch_unit.sv \
+    rtl/core/fetch.sv \
+    rtl/core/hazard_unit.sv \
+    rtl/core/execute.sv \
+    rtl/core/load_align.sv \
+    rtl/core/riscv_core.sv \
+    rtl/memory/sram.sv \
+    rtl/core/imem_sync.sv \
+    rtl/accelerator/sa_pkg.sv \
+    rtl/accelerator/pe.sv \
+    rtl/accelerator/sa_top.sv \
+    rtl/accelerator/sa_buffer.sv \
+    rtl/axi/axi4_lite_slave.sv \
+    rtl/accelerator/accelerator_top.sv \
+    rtl/axi/mem_to_axil.sv \
+    rtl/soc_top.sv
+
+hierarchy -check -top soc_top
+proc
+
+# Hierarchical stat *before* opt so the per-block cell counts survive even
+# though soc_top exposes only clk/rst_n.
+tee -o synth/build/soc.stats stat
+
+flatten
+techmap
+abc -fast
+
+# Post-mapping flat stat
+tee -a synth/build/soc.stats stat
+write_json    synth/build/soc.json
+write_verilog synth/build/soc.synth.v

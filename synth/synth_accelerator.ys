@@ -1,0 +1,23 @@
+# Yosys synthesis script — Systolic-array accelerator (with AXI4-Lite slave)
+# yosys -m slang -s synth/synth_accelerator.ys
+
+read_slang --top accelerator_top \
+    rtl/accelerator/sa_pkg.sv \
+    rtl/accelerator/pe.sv \
+    rtl/accelerator/sa_top.sv \
+    rtl/accelerator/sa_buffer.sv \
+    rtl/axi/axi4_lite_slave.sv \
+    rtl/accelerator/accelerator_top.sv
+
+hierarchy -check -top accelerator_top
+proc; opt; fsm; opt; memory; opt
+techmap; opt
+abc -fast
+opt_clean
+
+tee -o synth/build/accelerator.stats stat
+flatten
+opt_clean
+tee -a synth/build/accelerator.stats stat
+write_json    synth/build/accelerator.json
+write_verilog synth/build/accelerator.synth.v

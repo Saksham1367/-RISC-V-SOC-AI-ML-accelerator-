@@ -1,9 +1,11 @@
+// =============================================================================
 // load_align.sv — Aligns and sign/zero-extends data read from memory.
+// LB/LBU/LH/LHU/LW.
+// =============================================================================
 `default_nettype none
 
-module load_align
-  import riscv_pkg::*;
-(
+import riscv_pkg::*;
+module load_align(
   input  mem_size_e   size,
   input  logic        is_unsigned,
   input  logic [1:0]  byte_off,

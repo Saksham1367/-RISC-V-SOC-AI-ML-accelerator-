@@ -1,0 +1,26 @@
+# Yosys synthesis script — RV32I core
+# Run from the repo root:
+#     yosys -m slang -s synth/synth_core.ys
+
+read_slang --top riscv_core \
+    rtl/core/riscv_pkg.sv \
+    rtl/core/alu.sv \
+    rtl/core/regfile.sv \
+    rtl/core/imm_gen.sv \
+    rtl/core/decoder.sv \
+    rtl/core/branch_unit.sv \
+    rtl/core/fetch.sv \
+    rtl/core/hazard_unit.sv \
+    rtl/core/execute.sv \
+    rtl/core/load_align.sv \
+    rtl/core/riscv_core.sv
+
+hierarchy -check -top riscv_core
+proc; opt; fsm; opt; memory; opt
+techmap; opt
+abc -fast
+opt_clean
+
+tee -o synth/build/core.stats stat
+write_json    synth/build/core.json
+write_verilog synth/build/core.synth.v
