@@ -43,7 +43,8 @@ module soc_core_tb_top #(
     .dmem_wstrb (dmem_wstrb),
     .dmem_re    (dmem_re),
     .dmem_we    (dmem_we),
-    .dmem_rdata (dmem_rdata)
+    .dmem_rdata (dmem_rdata),
+    .dmem_stall (1'b0)
   );
 
   // 1-cycle latency IMEM

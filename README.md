@@ -10,11 +10,11 @@ Project under active development. Phase progress tracked below.
 |-------|-------|--------|
 | 1 | RISC-V RV32I 3-stage core | ✅ green (22/22) |
 | 2 | 4×4 Systolic Array Accelerator | ✅ green (11/11) |
-| 3 | AXI4 / AXI4-Lite Bus Integration | Pending |
+| 3 | AXI4-Lite + SoC integration | ✅ green (9/9) |
 | 4 | cocotb Verification Environment | Pending |
 | 5 | Regression + Yosys Synthesis + Docs | Pending |
 
-**Total Phase 1+2 regression: 33/33 PASS**
+**Total Phase 1+2+3 regression: 42/42 PASS** — including a real RV32I program assembled in Python that drives the systolic array end-to-end via AXI4-Lite, verified against a NumPy golden model.
 
 ## Architecture
 

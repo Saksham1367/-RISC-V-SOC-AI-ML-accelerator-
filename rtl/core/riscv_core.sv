@@ -29,22 +29,32 @@ module riscv_core
   output logic         imem_re,
   input  logic [31:0]  imem_rdata,
 
-  // data memory (synchronous, 1-cycle latency on rdata)
+  // data memory (single-cycle on the local data SRAM; the SoC interconnect
+  // raises `dmem_stall` while routing a load/store through a multi-cycle
+  // path such as the AXI4-Lite bridge — the core then freezes the entire
+  // pipeline for the duration).
   output logic [31:0]  dmem_addr,
   output logic [31:0]  dmem_wdata,
   output logic [3:0]   dmem_wstrb,
   output logic         dmem_re,
   output logic         dmem_we,
-  input  logic [31:0]  dmem_rdata
+  input  logic [31:0]  dmem_rdata,
+  input  logic         dmem_stall
 );
 
   // ===========================================================================
   // IF stage
   // ===========================================================================
   logic        stall_if, stall_id, bubble_ex;
+  logic        haz_stall_if, haz_stall_id, haz_bubble_ex;
   logic        flush_if;
   logic [31:0] if_pc, if_instr;
   logic        if_valid;
+
+  // Memory-side stall: the EX-stage instruction is doing an MMIO load/store
+  // and the interconnect has asserted dmem_stall. Freeze the entire pipeline
+  // (no PC advance, no IF/ID or ID/EX update, suppress writeback).
+  logic        mem_stall;
 
   // Branch redirect from EX
   logic        ex_pc_redirect;
@@ -150,10 +160,16 @@ module riscv_core
     .ex_mem_re  (ex_ctrl.mem_re),
     .fwd_rs1    (fwd_rs1),
     .fwd_rs2    (fwd_rs2),
-    .stall_if   (stall_if),
-    .stall_id   (stall_id),
-    .bubble_ex  (bubble_ex)
+    .stall_if   (haz_stall_if),
+    .stall_id   (haz_stall_id),
+    .bubble_ex  (haz_bubble_ex)
   );
+
+  // OR memory-side stall on top of hazard stalls.
+  assign mem_stall = (ex_ctrl.mem_re | ex_ctrl.mem_we) & dmem_stall;
+  assign stall_if  = haz_stall_if  | mem_stall;
+  assign stall_id  = haz_stall_id  | mem_stall;
+  assign bubble_ex = haz_bubble_ex;   // load-use bubble stays the same
 
   // ===========================================================================
   // ID/EX pipeline register
@@ -167,6 +183,12 @@ module riscv_core
       ex_pc       <= '0;
       ex_rs1_data <= '0;
       ex_rs2_data <= '0;
+    end else if (mem_stall) begin
+      // hold EX stage while MMIO is in flight
+      ex_ctrl     <= ex_ctrl;
+      ex_pc       <= ex_pc;
+      ex_rs1_data <= ex_rs1_data;
+      ex_rs2_data <= ex_rs2_data;
     end else if (bubble_ex || flush_if) begin
       // Insert NOP bubble: zero out control so nothing is written/branched
       ex_ctrl     <= '0;
@@ -226,7 +248,8 @@ module riscv_core
     endcase
   end
 
-  assign wb_we   = ex_ctrl.reg_we;
+  // Suppress writeback while the memory-side stall is in flight.
+  assign wb_we   = ex_ctrl.reg_we & ~mem_stall;
   assign wb_rd   = ex_ctrl.rd;
   assign wb_data = ex_wb_value;
 

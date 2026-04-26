@@ -28,7 +28,8 @@ sys.path.insert(0, str(COCOTB))
 
 
 def _runner(name: str, sources: list[Path], top: str, test_module: str,
-            test_dir: Path, build_dir: Path) -> int:
+            test_dir: Path, build_dir: Path,
+            parameters: dict | None = None) -> int:
     from cocotb_tools.runner import get_runner
 
     print(f"\n========== Suite: {name} ==========")
@@ -37,6 +38,7 @@ def _runner(name: str, sources: list[Path], top: str, test_module: str,
         sources=[str(p) for p in sources],
         hdl_toplevel=top,
         build_args=["-g2012"],
+        parameters=parameters or {},
         timescale=("1ns", "1ps"),
         waves=False,
         always=True,
@@ -116,6 +118,69 @@ def run_riscv_core() -> int:
     )
 
 
+def run_accelerator_top() -> int:
+    return _runner(
+        name="Accelerator top (matmul over AXI4-Lite)",
+        sources=[
+            REPO / "rtl" / "accelerator" / "sa_pkg.sv",
+            REPO / "rtl" / "accelerator" / "pe.sv",
+            REPO / "rtl" / "accelerator" / "sa_top.sv",
+            REPO / "rtl" / "accelerator" / "sa_buffer.sv",
+            REPO / "rtl" / "axi" / "axi4_lite_slave.sv",
+            REPO / "rtl" / "accelerator" / "accelerator_top.sv",
+        ],
+        top="accelerator_top",
+        test_module="test_accelerator_top",
+        test_dir=COCOTB / "accelerator" / "accelerator_top",
+        build_dir=REPO / "sim" / "accelerator_top",
+    )
+
+
+def run_soc() -> int:
+    return _runner(
+        name="SoC top — RV32I program drives accelerator end-to-end",
+        sources=[
+            REPO / "rtl" / "core" / "riscv_pkg.sv",
+            REPO / "rtl" / "core" / "alu.sv",
+            REPO / "rtl" / "core" / "regfile.sv",
+            REPO / "rtl" / "core" / "imm_gen.sv",
+            REPO / "rtl" / "core" / "decoder.sv",
+            REPO / "rtl" / "core" / "branch_unit.sv",
+            REPO / "rtl" / "core" / "fetch.sv",
+            REPO / "rtl" / "core" / "hazard_unit.sv",
+            REPO / "rtl" / "core" / "execute.sv",
+            REPO / "rtl" / "core" / "load_align.sv",
+            REPO / "rtl" / "core" / "riscv_core.sv",
+            REPO / "rtl" / "memory" / "sram.sv",
+            REPO / "rtl" / "core" / "imem_sync.sv",
+            REPO / "rtl" / "accelerator" / "sa_pkg.sv",
+            REPO / "rtl" / "accelerator" / "pe.sv",
+            REPO / "rtl" / "accelerator" / "sa_top.sv",
+            REPO / "rtl" / "accelerator" / "sa_buffer.sv",
+            REPO / "rtl" / "axi" / "axi4_lite_slave.sv",
+            REPO / "rtl" / "accelerator" / "accelerator_top.sv",
+            REPO / "rtl" / "axi" / "mem_to_axil.sv",
+            REPO / "rtl" / "soc_top.sv",
+        ],
+        top="soc_top",
+        test_module="test_soc",
+        test_dir=COCOTB / "soc",
+        build_dir=REPO / "sim" / "soc",
+    )
+
+
+def run_axil() -> int:
+    return _runner(
+        name="AXI4-Lite slave",
+        sources=[REPO / "rtl" / "axi" / "axi4_lite_slave.sv"],
+        top="axi4_lite_slave",
+        test_module="test_axil",
+        test_dir=COCOTB / "accelerator" / "axi_lite",
+        build_dir=REPO / "sim" / "axil",
+        parameters={"NUM_REGS": 8},
+    )
+
+
 def run_pe() -> int:
     return _runner(
         name="PE",
@@ -150,6 +215,9 @@ SUITES = {
     "riscv_core": run_riscv_core,
     "pe":         run_pe,
     "sa_buffer":  run_sa_buffer,
+    "axil":       run_axil,
+    "accel_top":  run_accelerator_top,
+    "soc":        run_soc,
 }
 
 
