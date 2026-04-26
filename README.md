@@ -107,21 +107,80 @@ SoC suite total          81.48%
 
 Running with `WAVES=1` produces `.fst` dumps under `sim/<suite>/`. Open them
 with `python scripts/open_waves.py <suite>` (or `gtkwave sim/<suite>/<top>.fst`
-directly). The screenshots below are captured from real cocotb runs.
+directly). All screenshots below are GTKWave captures from real cocotb runs.
 
-| Block | Screenshot |
-|-------|------------|
-| Core arithmetic + writeback | ![](docs/screenshots/core_arith.png) |
-| Load-use stall (1-cycle bubble) | ![](docs/screenshots/core_loaduse.png) |
-| Branch taken — IF/ID flush | ![](docs/screenshots/core_branch.png) |
-| PE multiply-accumulate | ![](docs/screenshots/pe_mac.png) |
-| 4×4 systolic-array matmul | ![](docs/screenshots/sa_matmul.png) |
-| AXI4-Lite write handshake | ![](docs/screenshots/axil_handshake.png) |
-| Accelerator program flow | ![](docs/screenshots/accel_program.png) |
-| SoC end-to-end (RV32I → array) | ![](docs/screenshots/soc_full.png) |
+### RISC-V core (`riscv_core` suite)
 
-> If an image isn't rendering yet, see [`docs/screenshots/README.md`](docs/screenshots/README.md)
-> for capture instructions and exact filenames.
+Arithmetic + writeback (`addi`, `add`, `sub` chain) — `wb_we` pulses with
+`wb_rd` cycling through x1..x4 and `wb_data` showing 5, 7, 12, 2:
+
+![core arithmetic](docs/screenshots/core_arith.png)
+
+Branch taken — `flush=1`/`pc_redirect=1` pulse mid-frame redirects the PC,
+flushing the IF/ID register:
+
+![branch flush](docs/screenshots/core_branch.png)
+
+Load-use stall — `stall_id`/`stall_if` pulses on the cycle a `lw` is in EX
+and the next instruction reads its destination. `imem_rdata=00002083` is
+the `lw x1, 0(x0)` encoding:
+
+![load-use stall](docs/screenshots/core_loaduse.png)
+
+### Processing element (`pe` suite)
+
+Random-storm MAC — `acc_out` and `acc_q` accumulating signed products as
+`valid_in` pulses arrive each cycle with new `a_in × b_in`:
+
+![PE MAC](docs/screenshots/pe_mac.png)
+![PE accumulator at -ve values](docs/screenshots/pe_random.png)
+
+### 4×4 Systolic array (`sa_buffer` suite)
+
+Five matrix-multiply runs back-to-back: `start` pulses, `busy` rises, `count`
+ticks 0→11 (3N−1 cycles), `done` pulse, repeat. State machine cycles
+`S_IDLE → S_RUN → S_LATCH → S_DONE`:
+
+![systolic-array matmul](docs/screenshots/sa_matmul.png)
+
+### AXI4-Lite slave (`axil` suite)
+
+Write/read handshake test with byte-strobe — `awvalid+awready`, `wvalid+wready`,
+`bvalid+bready` channels firing in sequence; `wstrb` shifting between `0xF`,
+`0x2`, `0x8`:
+
+![AXI4-Lite handshake](docs/screenshots/axil_handshake.png)
+
+Random-storm test — 60 transactions, all returning `bresp=00` (OKAY):
+
+![AXI4-Lite random](docs/screenshots/axil_random.png)
+
+### Accelerator behind AXI4-Lite (`accel_top` suite)
+
+Identity-matmul test — host writes A & B over the bus, `start_pulse` ticks,
+`acc_busy` rises, `acc_done` pulses, then host reads C[0..15] back:
+
+![accelerator program flow](docs/screenshots/accel_program.png)
+![accelerator random matmul](docs/screenshots/accel_random.png)
+
+### Full SoC (`soc` suite) — end-to-end RV32I → systolic array
+
+Wide view of the assembled program executing: bursts of MMIO traffic at
+`0x2xxx_xxxx` (loads to accelerator + status polls + result reads), with
+`bridge_stall` lifting the core's `core_dmem_stall` between transactions:
+
+![SoC overview](docs/screenshots/soc_full.png)
+
+Zoomed in to a single matmul — the AXI bridge's `bvalid`/`rvalid` ticks,
+`dmem_we` pulses (storing the 16 result words back to data SRAM), and
+`bridge_rdata` returning the C[i][j] values from the accelerator:
+
+![SoC program detail](docs/screenshots/soc_program.png)
+
+Random-test region — same shape repeated for each of the 5 random INT8
+matrices, all verified against NumPy:
+
+![SoC random matmuls](docs/screenshots/soc_random.png)
 
 ## Synthesis
 
