@@ -1,60 +1,77 @@
 // =============================================================================
-// hazard_unit.sv — Resolves data and control hazards for the 3-stage pipeline.
+// hazard_unit.sv — Forwarding muxes for the 5-stage pipeline.
 //
 // Pipeline:
-//   IF  : PC -> imem
-//   ID  : decode, regfile read
-//   EX  : ALU / branch / mem
+//   IF -> ID -> EX -> MEM -> WB
 //
-// Data hazards we handle:
-//   * EX -> ID forwarding for ALU results (consumer in ID needs value being
-//     produced this cycle by the instruction in EX).
-//   * Load-use stall: if instruction in EX is a load and instruction in ID
-//     reads the load's destination, stall ID for one cycle.
+// Data hazards we handle (forwarding only — no load-use stall is needed
+// because single-cycle SRAM + MEM-stage load_align produces the load value
+// combinationally for MEM->EX forwarding the cycle after the load was in EX):
 //
-// Control hazards:
-//   * Taken branch / jump in EX redirects PC and flushes IF/ID register.
+//   * MEM -> EX forward (priority): if the instruction in MEM stage is going
+//     to write a register that EX-stage source reads, forward the MEM
+//     stage's "would-write" value (load_aligned for loads, alu_result for
+//     ALU/MUL, pc+4 for JAL).
+//   * WB  -> EX forward: same idea, one stage later.
+//
+// Priority: MEM forward beats WB forward (MEM is the more recent producer).
+//
+// Stalls (mem_stall from MMIO and div_stall from iterative DIV) are handled
+// in riscv_core.sv directly — they're not data-forwarding concerns.
 // =============================================================================
 `default_nettype none
 
 module hazard_unit
   import riscv_pkg::*;
 (
-  // ID-stage operand sources
-  input  logic [4:0] id_rs1,
-  input  logic [4:0] id_rs2,
+  // ID/EX register source operands (the instruction currently in EX)
+  input  logic [4:0] id_ex_rs1,
+  input  logic [4:0] id_ex_rs2,
 
-  // EX-stage destination + control
-  input  logic [4:0] ex_rd,
-  input  logic       ex_reg_we,
-  input  logic       ex_mem_re,    // load in EX -> potential load-use hazard
+  // EX/MEM register destination (instruction currently in MEM)
+  input  logic [4:0] ex_mem_rd,
+  input  logic       ex_mem_reg_we,
+  input  logic       ex_mem_valid,
 
-  // forwarding outputs (ID-stage operand mux selects)
-  output logic       fwd_rs1,      // 1 = use ex_alu_result instead of regfile rs1
-  output logic       fwd_rs2,
+  // MEM/WB register destination (instruction currently in WB)
+  input  logic [4:0] mem_wb_rd,
+  input  logic       mem_wb_reg_we,
+  input  logic       mem_wb_valid,
 
-  // pipeline control
-  output logic       stall_if,
-  output logic       stall_id,
-  output logic       bubble_ex     // insert NOP into EX next cycle (load-use)
+  // Forwarding mux selects:
+  //   2'b00 = regfile (no forward)
+  //   2'b01 = WB-stage value
+  //   2'b10 = MEM-stage value (highest priority)
+  output logic [1:0] fwd_a_sel,
+  output logic [1:0] fwd_b_sel
 );
 
-  logic rs1_match, rs2_match;
-  assign rs1_match = ex_reg_we && (ex_rd != 5'd0) && (ex_rd == id_rs1);
-  assign rs2_match = ex_reg_we && (ex_rd != 5'd0) && (ex_rd == id_rs2);
+  logic mem_a_match, mem_b_match;
+  logic wb_a_match,  wb_b_match;
 
-  // load-use: load in EX, dependent op in ID
-  logic load_use;
-  assign load_use = ex_mem_re && (rs1_match || rs2_match);
+  assign mem_a_match = ex_mem_valid && ex_mem_reg_we
+                    && (ex_mem_rd != 5'd0)
+                    && (ex_mem_rd == id_ex_rs1);
+  assign mem_b_match = ex_mem_valid && ex_mem_reg_we
+                    && (ex_mem_rd != 5'd0)
+                    && (ex_mem_rd == id_ex_rs2);
 
-  // forward (only when not load-use; load-use handles via stall)
-  assign fwd_rs1 = rs1_match && !load_use;
-  assign fwd_rs2 = rs2_match && !load_use;
+  assign wb_a_match  = mem_wb_valid && mem_wb_reg_we
+                    && (mem_wb_rd != 5'd0)
+                    && (mem_wb_rd == id_ex_rs1);
+  assign wb_b_match  = mem_wb_valid && mem_wb_reg_we
+                    && (mem_wb_rd != 5'd0)
+                    && (mem_wb_rd == id_ex_rs2);
 
-  // stall on load-use: freeze IF and ID for one cycle, bubble EX
-  assign stall_if  = load_use;
-  assign stall_id  = load_use;
-  assign bubble_ex = load_use;
+  always_comb begin
+    if      (mem_a_match) fwd_a_sel = 2'b10;
+    else if (wb_a_match)  fwd_a_sel = 2'b01;
+    else                  fwd_a_sel = 2'b00;
+
+    if      (mem_b_match) fwd_b_sel = 2'b10;
+    else if (wb_b_match)  fwd_b_sel = 2'b01;
+    else                  fwd_b_sel = 2'b00;
+  end
 
 endmodule : hazard_unit
 

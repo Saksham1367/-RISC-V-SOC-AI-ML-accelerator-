@@ -10,6 +10,7 @@ read_slang --top soc_top \
     rtl/core/branch_unit.sv \
     rtl/core/fetch.sv \
     rtl/core/hazard_unit.sv \
+    rtl/core/div32.sv \
     rtl/core/execute.sv \
     rtl/core/load_align.sv \
     rtl/core/riscv_core.sv \

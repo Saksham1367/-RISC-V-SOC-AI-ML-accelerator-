@@ -95,30 +95,60 @@ def run_imm_gen() -> int:
     )
 
 
-def run_riscv_core() -> int:
-    sources = [
-        RTL_CORE / "riscv_pkg.sv",
-        RTL_CORE / "alu.sv",
-        RTL_CORE / "regfile.sv",
-        RTL_CORE / "imm_gen.sv",
-        RTL_CORE / "decoder.sv",
-        RTL_CORE / "branch_unit.sv",
-        RTL_CORE / "fetch.sv",
-        RTL_CORE / "hazard_unit.sv",
-        RTL_CORE / "execute.sv",
-        RTL_CORE / "load_align.sv",
-        RTL_CORE / "riscv_core.sv",
+_CORE_SOURCES = [
+    "riscv_pkg.sv",
+    "alu.sv",
+    "regfile.sv",
+    "imm_gen.sv",
+    "decoder.sv",
+    "branch_unit.sv",
+    "fetch.sv",
+    "hazard_unit.sv",
+    "div32.sv",
+    "execute.sv",
+    "load_align.sv",
+    "riscv_core.sv",
+]
+
+
+def _core_tb_sources() -> list[Path]:
+    return [RTL_CORE / f for f in _CORE_SOURCES] + [
         RTL_MEM / "sram.sv",
         RTL_CORE / "imem_sync.sv",
         RTL_CORE / "soc_core_tb_top.sv",
     ]
+
+
+def run_riscv_core() -> int:
     return _runner(
         name="RISC-V core integration",
-        sources=sources,
+        sources=_core_tb_sources(),
         top="soc_core_tb_top",
         test_module="test_riscv_core",
         test_dir=COCOTB / "core" / "riscv_core",
         build_dir=REPO / "sim" / "riscv_core",
+    )
+
+
+def run_riscv_m() -> int:
+    return _runner(
+        name="RV32M (MUL/DIV/REM vs Python golden)",
+        sources=_core_tb_sources(),
+        top="soc_core_tb_top",
+        test_module="test_riscv_m",
+        test_dir=COCOTB / "core" / "riscv_core",
+        build_dir=REPO / "sim" / "riscv_m",
+    )
+
+
+def run_riscv_fwd() -> int:
+    return _runner(
+        name="5-stage forwarding paths (MEM->EX, WB->EX, load-use)",
+        sources=_core_tb_sources(),
+        top="soc_core_tb_top",
+        test_module="test_riscv_forwarding",
+        test_dir=COCOTB / "core" / "riscv_core",
+        build_dir=REPO / "sim" / "riscv_fwd",
     )
 
 
@@ -152,6 +182,7 @@ def run_soc_random() -> int:
             REPO / "rtl" / "core" / "branch_unit.sv",
             REPO / "rtl" / "core" / "fetch.sv",
             REPO / "rtl" / "core" / "hazard_unit.sv",
+            REPO / "rtl" / "core" / "div32.sv",
             REPO / "rtl" / "core" / "execute.sv",
             REPO / "rtl" / "core" / "load_align.sv",
             REPO / "rtl" / "core" / "riscv_core.sv",
@@ -185,6 +216,7 @@ def run_core_random() -> int:
             REPO / "rtl" / "core" / "branch_unit.sv",
             REPO / "rtl" / "core" / "fetch.sv",
             REPO / "rtl" / "core" / "hazard_unit.sv",
+            REPO / "rtl" / "core" / "div32.sv",
             REPO / "rtl" / "core" / "execute.sv",
             REPO / "rtl" / "core" / "load_align.sv",
             REPO / "rtl" / "core" / "riscv_core.sv",
@@ -211,6 +243,7 @@ def run_soc() -> int:
             REPO / "rtl" / "core" / "branch_unit.sv",
             REPO / "rtl" / "core" / "fetch.sv",
             REPO / "rtl" / "core" / "hazard_unit.sv",
+            REPO / "rtl" / "core" / "div32.sv",
             REPO / "rtl" / "core" / "execute.sv",
             REPO / "rtl" / "core" / "load_align.sv",
             REPO / "rtl" / "core" / "riscv_core.sv",
@@ -276,6 +309,8 @@ SUITES = {
     "regfile":    run_regfile,
     "imm_gen":    run_imm_gen,
     "riscv_core": run_riscv_core,
+    "riscv_m":    run_riscv_m,
+    "riscv_fwd":  run_riscv_fwd,
     "pe":         run_pe,
     "sa_buffer":  run_sa_buffer,
     "axil":       run_axil,

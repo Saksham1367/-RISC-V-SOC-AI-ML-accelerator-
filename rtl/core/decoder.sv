@@ -158,27 +158,68 @@ module decoder
 
       // ----------------------------------------------------------------
       // OP (R-type): ADD/SUB AND/OR/XOR SLL/SRL/SRA SLT/SLTU
+      //   funct7=F7_MULDIV (0000001) selects RV32M:
+      //     funct3 000..011 -> MUL/MULH/MULHSU/MULHU (single-cycle in ALU)
+      //     funct3 100..111 -> DIV/DIVU/REM/REMU (iterative div32, stalls EX)
       // ----------------------------------------------------------------
       OPC_OP: begin
         ctrl.reg_we    = 1'b1;
         ctrl.src_b_sel = SRC_B_REG;
-        unique case (funct3)
-          F3_ADD_SUB: begin
-            if (funct7[5]) ctrl.alu_op = ALU_SUB;
-            else           ctrl.alu_op = ALU_ADD;
-          end
-          F3_SLL:     ctrl.alu_op = ALU_SLL;
-          F3_SLT:     ctrl.alu_op = ALU_SLT;
-          F3_SLTU:    ctrl.alu_op = ALU_SLTU;
-          F3_XOR:     ctrl.alu_op = ALU_XOR;
-          F3_SRL_SRA: begin
-            if (funct7[5]) ctrl.alu_op = ALU_SRA;
-            else           ctrl.alu_op = ALU_SRL;
-          end
-          F3_OR:      ctrl.alu_op = ALU_OR;
-          F3_AND:     ctrl.alu_op = ALU_AND;
-          default:    ctrl.illegal = 1'b1;
-        endcase
+        if (funct7 == F7_MULDIV) begin
+          unique case (funct3)
+            F3_MUL: begin
+              ctrl.is_mul = 1'b1;
+              ctrl.alu_op = ALU_MUL;
+            end
+            F3_MULH: begin
+              ctrl.is_mul = 1'b1;
+              ctrl.alu_op = ALU_MULH;
+            end
+            F3_MULHSU: begin
+              ctrl.is_mul = 1'b1;
+              ctrl.alu_op = ALU_MULHSU;
+            end
+            F3_MULHU: begin
+              ctrl.is_mul = 1'b1;
+              ctrl.alu_op = ALU_MULHU;
+            end
+            F3_DIV: begin
+              ctrl.is_div = 1'b1;
+              ctrl.div_op = DIV_OP_DIV;
+            end
+            F3_DIVU: begin
+              ctrl.is_div = 1'b1;
+              ctrl.div_op = DIV_OP_DIVU;
+            end
+            F3_REM: begin
+              ctrl.is_div = 1'b1;
+              ctrl.div_op = DIV_OP_REM;
+            end
+            F3_REMU: begin
+              ctrl.is_div = 1'b1;
+              ctrl.div_op = DIV_OP_REMU;
+            end
+            default: ctrl.illegal = 1'b1;
+          endcase
+        end else begin
+          unique case (funct3)
+            F3_ADD_SUB: begin
+              if (funct7[5]) ctrl.alu_op = ALU_SUB;
+              else           ctrl.alu_op = ALU_ADD;
+            end
+            F3_SLL:     ctrl.alu_op = ALU_SLL;
+            F3_SLT:     ctrl.alu_op = ALU_SLT;
+            F3_SLTU:    ctrl.alu_op = ALU_SLTU;
+            F3_XOR:     ctrl.alu_op = ALU_XOR;
+            F3_SRL_SRA: begin
+              if (funct7[5]) ctrl.alu_op = ALU_SRA;
+              else           ctrl.alu_op = ALU_SRL;
+            end
+            F3_OR:      ctrl.alu_op = ALU_OR;
+            F3_AND:     ctrl.alu_op = ALU_AND;
+            default:    ctrl.illegal = 1'b1;
+          endcase
+        end
       end
 
       OPC_FENCE:  begin /* NOP for single-core */ end

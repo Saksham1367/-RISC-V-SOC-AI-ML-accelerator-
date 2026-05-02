@@ -137,3 +137,15 @@ def jalr(rd, rs1, imm):       return encode_i(imm, rs1, 0b000, rd, 0b1100111)
 
 def lui(rd, imm):             return encode_u(imm, rd, 0b0110111)
 def auipc(rd, imm):           return encode_u(imm, rd, 0b0010111)
+
+# ---------------------------------------------------------------------------
+# RV32M (multiply / divide) — funct7 = 0x01, opcode = OP (0110011)
+# ---------------------------------------------------------------------------
+def mul(rd, rs1, rs2):        return encode_r(0x01, rs2, rs1, 0b000, rd, 0b0110011)
+def mulh(rd, rs1, rs2):       return encode_r(0x01, rs2, rs1, 0b001, rd, 0b0110011)
+def mulhsu(rd, rs1, rs2):     return encode_r(0x01, rs2, rs1, 0b010, rd, 0b0110011)
+def mulhu(rd, rs1, rs2):      return encode_r(0x01, rs2, rs1, 0b011, rd, 0b0110011)
+def div(rd, rs1, rs2):        return encode_r(0x01, rs2, rs1, 0b100, rd, 0b0110011)
+def divu(rd, rs1, rs2):       return encode_r(0x01, rs2, rs1, 0b101, rd, 0b0110011)
+def rem(rd, rs1, rs2):        return encode_r(0x01, rs2, rs1, 0b110, rd, 0b0110011)
+def remu(rd, rs1, rs2):       return encode_r(0x01, rs2, rs1, 0b111, rd, 0b0110011)
