@@ -1,9 +1,4 @@
 # SEDA Project — Research Literature Context Document
-## For Claude Code Development Context
-
-**Purpose**: This document synthesizes key findings, architectural patterns, design decisions, and implementation-relevant details from the academic literature directly relevant to building the SEDA (Sparse Event-Driven Neural Accelerator) SoC. Feed this document to Claude Code as project context to ensure RTL design, verification, and firmware decisions align with proven research methodologies.
-
-**Project Summary**: SEDA is a RISC-V RV32IM SoC with a tightly-coupled 8×8 INT8 systolic array ML accelerator featuring three-gate sparsity filtering (zero-detection, change-detection, spike-threshold), custom ISA extensions (mm.* instructions via custom-0 opcode), targeting the Sipeed Tang Nano 20K (Gowin GW2AR-18) FPGA and SkyWater SKY130 ASIC tapeout via OpenLane.
 
 ---
 
