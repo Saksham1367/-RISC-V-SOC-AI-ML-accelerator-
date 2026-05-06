@@ -130,12 +130,14 @@ module mem_to_axil #(
         if (m_axi_rvalid)                     st_next = S_DONE;
       end
       S_DONE: begin
-        // One cycle for the CPU to sample rdata_q with stall=0 and advance.
+        // Hold here until the CPU drops req_valid. With Phase-2a's I-cache
+        // integrated, an imem_stall miss elsewhere can hold EX/MEM frozen
+        // even after our transaction completes — req_valid stays high. We
+        // must NOT re-fire the same transaction in that case (it would
+        // re-write CTRL/A/B regs to the accelerator). Wait for req_valid
+        // to drop, then return to S_IDLE.
         if (!req_valid)                       st_next = S_IDLE;
-        // If req_valid is somehow still high (CPU not advancing yet), stay here
-        // — this shouldn't happen because mem_stall=0 in S_DONE permits the EX
-        // stage to commit and the next instruction to enter, dropping req_valid.
-        else                                  st_next = S_IDLE;
+        else                                  st_next = S_DONE;
       end
       default:                                st_next = S_IDLE;
     endcase

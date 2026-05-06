@@ -38,6 +38,7 @@ module soc_core_tb_top #(
     .imem_addr  (imem_addr),
     .imem_re    (imem_re),
     .imem_rdata (imem_rdata),
+    .imem_stall (1'b0),
     .dmem_addr  (dmem_addr),
     .dmem_wdata (dmem_wdata),
     .dmem_wstrb (dmem_wstrb),

@@ -51,12 +51,15 @@ module soc_top
 
   logic core_dmem_stall;
 
+  logic core_imem_stall;
+
   riscv_core u_core (
     .clk        (clk),
     .rst_n      (rst_n),
     .imem_addr  (imem_addr),
     .imem_re    (imem_re),
     .imem_rdata (imem_rdata),
+    .imem_stall (core_imem_stall),
     .dmem_addr  (dmem_addr),
     .dmem_wdata (dmem_wdata),
     .dmem_wstrb (dmem_wstrb),
@@ -67,13 +70,86 @@ module soc_top
   );
 
   // ---------------------------------------------------------------------
-  // Instruction SRAM (1-cycle synchronous read)
+  // L1 I-cache + AXI4-Full slave wrapping the instruction SRAM.
+  // The slave's inner module is named u_sram so existing tests can keep
+  // loading programs via dut.u_imem.u_sram.mem hierarchical writes.
   // ---------------------------------------------------------------------
-  imem_sync #(.DEPTH_WORDS(IMEM_DEPTH_WORDS)) u_imem (
-    .clk   (clk),
-    .addr  (imem_addr),
-    .re    (imem_re),
-    .rdata (imem_rdata)
+  localparam int unsigned ICACHE_AXI_ID_W = 4;
+
+  logic [ICACHE_AXI_ID_W-1:0] ic_arid;
+  logic [31:0]                ic_araddr;
+  logic [7:0]                 ic_arlen;
+  logic [2:0]                 ic_arsize;
+  logic [1:0]                 ic_arburst;
+  logic                       ic_arvalid, ic_arready;
+
+  logic [ICACHE_AXI_ID_W-1:0] ic_rid;
+  logic [31:0]                ic_rdata;
+  logic [1:0]                 ic_rresp;
+  logic                       ic_rlast;
+  logic                       ic_rvalid, ic_rready;
+
+  icache #(.ID_W(ICACHE_AXI_ID_W)) u_icache (
+    .clk            (clk),
+    .rst_n          (rst_n),
+    .cpu_addr       (imem_addr),
+    .cpu_re         (imem_re),
+    .cpu_rdata      (imem_rdata),
+    .cpu_stall      (core_imem_stall),
+    .m_axi_arid     (ic_arid),
+    .m_axi_araddr   (ic_araddr),
+    .m_axi_arlen    (ic_arlen),
+    .m_axi_arsize   (ic_arsize),
+    .m_axi_arburst  (ic_arburst),
+    .m_axi_arvalid  (ic_arvalid),
+    .m_axi_arready  (ic_arready),
+    .m_axi_rid      (ic_rid),
+    .m_axi_rdata    (ic_rdata),
+    .m_axi_rresp    (ic_rresp),
+    .m_axi_rlast    (ic_rlast),
+    .m_axi_rvalid   (ic_rvalid),
+    .m_axi_rready   (ic_rready)
+  );
+
+  axi4_full_slave_sram #(
+    .ADDR_W      (32),
+    .DATA_W      (32),
+    .ID_W        (ICACHE_AXI_ID_W),
+    .DEPTH_WORDS (IMEM_DEPTH_WORDS)
+  ) u_imem (
+    .clk            (clk),
+    .rst_n          (rst_n),
+    // read channels (driven by I-cache)
+    .s_axi_arid     (ic_arid),
+    .s_axi_araddr   (ic_araddr),
+    .s_axi_arlen    (ic_arlen),
+    .s_axi_arsize   (ic_arsize),
+    .s_axi_arburst  (ic_arburst),
+    .s_axi_arvalid  (ic_arvalid),
+    .s_axi_arready  (ic_arready),
+    .s_axi_rid      (ic_rid),
+    .s_axi_rdata    (ic_rdata),
+    .s_axi_rresp    (ic_rresp),
+    .s_axi_rlast    (ic_rlast),
+    .s_axi_rvalid   (ic_rvalid),
+    .s_axi_rready   (ic_rready),
+    // write channels unused (I-cache is read-only)
+    .s_axi_awid     ('0),
+    .s_axi_awaddr   ('0),
+    .s_axi_awlen    ('0),
+    .s_axi_awsize   ('0),
+    .s_axi_awburst  ('0),
+    .s_axi_awvalid  (1'b0),
+    .s_axi_awready  (),
+    .s_axi_wdata    ('0),
+    .s_axi_wstrb    ('0),
+    .s_axi_wlast    (1'b0),
+    .s_axi_wvalid   (1'b0),
+    .s_axi_wready   (),
+    .s_axi_bid      (),
+    .s_axi_bresp    (),
+    .s_axi_bvalid   (),
+    .s_axi_bready   (1'b0)
   );
 
   // ---------------------------------------------------------------------

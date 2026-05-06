@@ -34,10 +34,13 @@ module riscv_core
   input  logic         clk,
   input  logic         rst_n,
 
-  // instruction memory (synchronous, 1-cycle latency)
+  // instruction memory (synchronous, 1-cycle latency on a hit; on a miss
+  // the SoC's I-cache asserts imem_stall while it refills the line from
+  // backing store via AXI4-Full bursts).
   output logic [31:0]  imem_addr,
   output logic         imem_re,
   input  logic [31:0]  imem_rdata,
+  input  logic         imem_stall,
 
   // data memory (single-cycle on local SRAM; the SoC interconnect raises
   // dmem_stall while routing via the AXI4-Lite bridge — the core then
@@ -322,7 +325,7 @@ module riscv_core
       mem_alu_result <= '0;
       mem_rs2_data   <= '0;
     end else if (mem_stall) begin
-      // hold
+      // hold (MEM-stage instr stays in MEM)
       mem_ctrl       <= mem_ctrl;
       mem_valid      <= mem_valid;
       mem_pc         <= mem_pc;
@@ -416,13 +419,24 @@ module riscv_core
   // EX-side stall: divide instruction in EX whose result isn't ready yet
   assign div_stall = ex_div_busy;
 
-  // Stall propagation: any downstream stall freezes IF and IF/ID
-  assign stall_if     = mem_stall | div_stall;
-  assign stall_id_reg = mem_stall | div_stall;
+  // IF-side stall: I-cache miss in flight. Freezes IF, IF/ID, ID/EX so the
+  // upstream pipeline holds while the cache refills. The downstream EX/MEM
+  // and MEM/WB are NOT held by imem_stall — they drain in-flight work as
+  // normal. With ID/EX held, EX produces the same outputs every cycle, so
+  // EX/MEM keeps re-capturing the same value (idempotent for DSRAM access
+  // and for accelerator MMIO writes thanks to the bridge's S_DONE-wait fix
+  // in mem_to_axil.sv). Holding EX/MEM during imem_stall would BREAK MMIO
+  // loads: the captured load value would be discarded when EX/MEM finally
+  // advances and replaces it with the next instruction's outputs.
+  assign stall_if     = mem_stall | div_stall | imem_stall;
+  assign stall_id_reg = mem_stall | div_stall | imem_stall;
 
   // ex_advance: pulses 1 the cycle EX/MEM register actually captures EX's
-  // outputs. Used by execute.sv to ack the divider.
-  assign ex_advance = !mem_stall && !div_stall;
+  // outputs in a non-trivial way. Used by execute.sv to ack the divider.
+  // EX/MEM advances even when imem_stall=1 (re-capturing held outputs),
+  // but we should NOT ack the divider on those cycles or its FSM would
+  // drop the result before it reaches MEM/WB.
+  assign ex_advance = !mem_stall && !div_stall && !imem_stall;
 
   // ===========================================================================
   // Branch flush

@@ -152,6 +152,23 @@ def run_riscv_fwd() -> int:
     )
 
 
+def run_icache() -> int:
+    return _runner(
+        name="I-cache + AXI4-Full slave (Phase 2a)",
+        sources=[
+            REPO / "rtl" / "cache" / "cache_pkg.sv",
+            REPO / "rtl" / "memory" / "sram.sv",
+            REPO / "rtl" / "axi" / "axi4_full_slave_sram.sv",
+            REPO / "rtl" / "cache" / "icache.sv",
+            REPO / "rtl" / "cache" / "icache_axi_tb_top.sv",
+        ],
+        top="icache_axi_tb_top",
+        test_module="test_icache",
+        test_dir=COCOTB / "cache" / "icache",
+        build_dir=REPO / "sim" / "icache",
+    )
+
+
 def run_accelerator_top() -> int:
     return _runner(
         name="Accelerator top (matmul over AXI4-Lite)",
@@ -188,6 +205,9 @@ def run_soc_random() -> int:
             REPO / "rtl" / "core" / "riscv_core.sv",
             REPO / "rtl" / "memory" / "sram.sv",
             REPO / "rtl" / "core" / "imem_sync.sv",
+            REPO / "rtl" / "cache" / "cache_pkg.sv",
+            REPO / "rtl" / "axi" / "axi4_full_slave_sram.sv",
+            REPO / "rtl" / "cache" / "icache.sv",
             REPO / "rtl" / "accelerator" / "sa_pkg.sv",
             REPO / "rtl" / "accelerator" / "pe.sv",
             REPO / "rtl" / "accelerator" / "sa_top.sv",
@@ -249,6 +269,9 @@ def run_soc() -> int:
             REPO / "rtl" / "core" / "riscv_core.sv",
             REPO / "rtl" / "memory" / "sram.sv",
             REPO / "rtl" / "core" / "imem_sync.sv",
+            REPO / "rtl" / "cache" / "cache_pkg.sv",
+            REPO / "rtl" / "axi" / "axi4_full_slave_sram.sv",
+            REPO / "rtl" / "cache" / "icache.sv",
             REPO / "rtl" / "accelerator" / "sa_pkg.sv",
             REPO / "rtl" / "accelerator" / "pe.sv",
             REPO / "rtl" / "accelerator" / "sa_top.sv",
@@ -311,6 +334,7 @@ SUITES = {
     "riscv_core": run_riscv_core,
     "riscv_m":    run_riscv_m,
     "riscv_fwd":  run_riscv_fwd,
+    "icache":     run_icache,
     "pe":         run_pe,
     "sa_buffer":  run_sa_buffer,
     "axil":       run_axil,

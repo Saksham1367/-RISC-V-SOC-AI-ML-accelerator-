@@ -16,6 +16,9 @@ read_slang --top soc_top \
     rtl/core/riscv_core.sv \
     rtl/memory/sram.sv \
     rtl/core/imem_sync.sv \
+    rtl/cache/cache_pkg.sv \
+    rtl/axi/axi4_full_slave_sram.sv \
+    rtl/cache/icache.sv \
     rtl/accelerator/sa_pkg.sv \
     rtl/accelerator/pe.sv \
     rtl/accelerator/sa_top.sv \
